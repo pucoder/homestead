@@ -3,7 +3,7 @@
 declare -A params=$6     # Create an associative array
 declare -A headers=${9}  # Create an associative array
 paramsTXT=""
-if [ -n "$6" ]; then
+if [[ -n "$6" ]]; then
     for element in "${!params[@]}"
     do
         paramsTXT="${paramsTXT}
@@ -11,7 +11,7 @@ if [ -n "$6" ]; then
     done
 fi
 headersTXT=""
-if [ -n "${9}" ]; then
+if [[ -n "${9}" ]]; then
    for element in "${!headers[@]}"
    do
       headersTXT="${headersTXT}
@@ -19,7 +19,7 @@ if [ -n "${9}" ]; then
    done
 fi
 
-if [ "${11}" = "false" ]
+if [[ "${11}" = "false" ]]
 then server_name="
 ServerName $1
 ServerAlias www.$1
@@ -27,14 +27,14 @@ ServerAlias www.$1
 else server_name=""
 fi
 
-if [ -n "${12}" ]
+if [[ -n "${12}" ]]
 then alias="
 Alias /${12}  $2
 "
 else alias=""
 fi
 
-if [! -f /home/vagrant/.homestead-features/apache2]; then
+if [[ ! -f /home/vagrant/.homestead-features/apache2 ]]; then
   touch /home/vagrant/.homestead-features/apache2
   chown -Rf vagrant:vagrant /home/vagrant/.homestead-features
 
