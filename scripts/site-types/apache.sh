@@ -1,52 +1,52 @@
 #!/usr/bin/env bash
 
-declare -A params=$6     # Create an associative array
-declare -A headers=${9}  # Create an associative array
+declare -A params=$6    # Create an associative array
+declare -A headers=${9} # Create an associative array
 paramsTXT=""
 if [[ -n "$6" ]]; then
-    for element in "${!params[@]}"
-    do
-        paramsTXT="${paramsTXT}
+  for element in "${!params[@]}"; do
+    paramsTXT="${paramsTXT}
         SetEnv ${element} \"${params[$element]}\""
-    done
+  done
 fi
 headersTXT=""
 if [[ -n "${9}" ]]; then
-   for element in "${!headers[@]}"
-   do
-      headersTXT="${headersTXT}
+  for element in "${!headers[@]}"; do
+    headersTXT="${headersTXT}
       Header always set ${element} \"${headers[$element]}\""
-   done
+  done
 fi
 
-if [[ "${11}" = "false" ]]
-then server_name="
+if [[ "${11}" == "false" ]]; then
+  server_name="
 ServerName $1
 ServerAlias www.$1
 "
-else server_name=""
+else
+  server_name=""
 fi
 
-if [[ -n "${12}" ]]
-then alias="
+if [[ -n "${12}" ]]; then
+  alias="
 Alias /${12}  $2
 "
-else alias=""
+else
+  alias=""
 fi
 
 if [[ ! -f /home/vagrant/.homestead-features/apache2 ]]; then
-  touch /home/vagrant/.homestead-features/apache2
-  chown -Rf vagrant:vagrant /home/vagrant/.homestead-features
+  sudo touch /home/vagrant/.homestead-features/apache2
+  sudo chown -Rf vagrant:vagrant /home/vagrant/.homestead-features
 
-  export DEBIAN_FRONTEND=noninteractive
+  sudo export DEBIAN_FRONTEND=noninteractive
 
   sudo service nginx stop
   sudo systemctl disable nginx
 
-  apt-get update
-  apt-get -o Dpkg::Options::="--force-confold" install -y apache2
-  #apt-get -o Dpkg::Options::="--force-confold" install -y apache2 php"$5"-cgi libapache2-mod-fcgid
-  sed -i "s/www-data/vagrant/" /etc/apache2/envvars
+  sudo apt-get update
+  sudo apt-get install -y apache2
+#  sudo apt-get -o Dpkg::Options::="--force-confold" install -y apache2 php"$5"-cgi libapache2-mod-fcgid
+  sudo sed -i "s/www-data/vagrant/" /etc/apache2/envvars
 fi
 
 block="<VirtualHost *:$3>
@@ -85,8 +85,13 @@ block="<VirtualHost *:$3>
 # vim: syntax=apache ts=4 sw=4 sts=4 sr noet
 "
 
-echo "$block" > "/etc/apache2/sites-available/$1.conf"
-ln -fs "/etc/apache2/sites-available/$1.conf" "/etc/apache2/sites-enabled/$1.conf"
+if [[ "${11}" == "false" ]]; then
+  sudo echo "$block" >"/etc/apache2/sites-available/$1.conf"
+  sudo ln -fs "/etc/apache2/sites-available/$1.conf" "/etc/apache2/sites-enabled/$1.conf"
+else
+  sudo echo "$block" >"/etc/apache2/sites-available/000-default.conf"
+  sudo ln -fs "/etc/apache2/sites-available/000-default.conf" "/etc/apache2/sites-enabled/000-default.conf"
+fi
 
 blockssl="<IfModule mod_ssl.c>
     <VirtualHost *:$4>
@@ -163,12 +168,17 @@ blockssl="<IfModule mod_ssl.c>
 # vim: syntax=apache ts=4 sw=4 sts=4 sr noet
 "
 
-echo "$blockssl" > "/etc/apache2/sites-available/$1-ssl.conf"
-ln -fs "/etc/apache2/sites-available/$1-ssl.conf" "/etc/apache2/sites-enabled/$1-ssl.conf"
+if [[ "${11}" == "false" ]]; then
+  sudo echo "$blockssl" >"/etc/apache2/sites-available/$1-ssl.conf"
+  sudo ln -fs "/etc/apache2/sites-available/$1-ssl.conf" "/etc/apache2/sites-enabled/$1-ssl.conf"
+else
+  sudo echo "$blockssl" >"/etc/apache2/sites-available/000-default-ssl.conf"
+  sudo ln -fs "/etc/apache2/sites-available/000-default-ssl.conf" "/etc/apache2/sites-enabled/000-default-ssl.conf"
+fi
 
-a2dissite 000-default
+#a2dissite 000-default
 
-ps auxw | grep apache2 | grep -v grep > /dev/null
+ps auxw | grep apache2 | grep -v grep >/dev/null
 
 # Enable FPM
 sudo a2enconf php"$5"-fpm
@@ -185,15 +195,13 @@ sudo a2enmod proxy proxy_fcgi
 sudo a2enmod headers actions alias
 
 # Add Mutex to config to prevent auto restart issues
-if [ -z "$(grep '^Mutex posixsem$' /etc/apache2/apache2.conf)" ]
-then
-    echo 'Mutex posixsem' | sudo tee -a /etc/apache2/apache2.conf
+if [ -z "$(grep '^Mutex posixsem$' /etc/apache2/apache2.conf)" ]; then
+  echo 'Mutex posixsem' | sudo tee -a /etc/apache2/apache2.conf
 fi
 
 service apache2 restart
 service php"$5"-fpm restart
 
-if [ $? == 0 ]
-then
-    service apache2 reload
+if [ $? == 0 ]; then
+  service apache2 reload
 fi
